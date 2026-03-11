@@ -1,24 +1,32 @@
 # 🛡️ SpendSentinel
 
-> your token cost firewall for agent teams.
+> local-first token cost firewall for AI agent workflows.
 
-Stop surprise API bills with per-key budgets, live usage tracking, and hard cutoff before spend runs away.
+Stop surprise API bills with per-key budgets, live usage tracking, warning alerts, and hard cutoff before spend runs away.
 
 ---
 
-## What it does
+## Why SpendSentinel
 
 - Track token spend per API key
 - Set monthly budgets per key
 - Enforce budget cutoffs before request execution
 - View live dashboard totals (today/week/all-time)
 - Manage keys (add, disable, delete, update budget)
+- Send threshold alerts to Discord/Slack webhooks
 
-## Who this is for
+---
 
-- Solo builders using Claude Code/Cursor heavily
-- Small teams sharing AI API keys
-- Agencies needing cost guardrails per client/project
+## Screenshots
+
+### Dashboard
+![SpendSentinel dashboard](./screenshots/dashboard.png)
+
+### Keys
+![SpendSentinel keys page](./screenshots/keys.png)
+
+### Settings
+![SpendSentinel settings page](./screenshots/settings.png)
 
 ---
 
@@ -96,14 +104,14 @@ For live forwarding:
 
 ---
 
-## Hardening Notes (2026-03-11)
+## Security Notes
 
-- Added file-backed persistence for keys, budgets, usage logs, and settings (`SPEND_SENTINEL_DATA_FILE`)
-- Added optional HTTP Basic Auth gate for all pages + API (`SPEND_SENTINEL_ADMIN_USER` / `SPEND_SENTINEL_ADMIN_PASS`)
+- Supports optional HTTP Basic Auth gate for dashboard + API
 - Refuses to run unauthenticated in production mode
-- API key ingestion is now header-only (`x-api-key`) to reduce accidental secret leakage in payload logs
-- Demo key auto-seeding is now dev/demo-only and can be disabled
-- Settings sanitization now constrains webhook URL to HTTPS and enforces max length
+- Uses header-only key ingestion (`x-api-key`) to reduce accidental payload leaks
+- Demo-key auto-seeding is dev/demo-only and can be disabled
+
+See `PRODUCTION_HARDENING_PLAN.md` for the SaaS-ready migration path.
 
 ---
 
