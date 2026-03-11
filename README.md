@@ -110,8 +110,7 @@ For live forwarding:
 - Refuses to run unauthenticated in production mode
 - Uses header-only key ingestion (`x-api-key`) to reduce accidental payload leaks
 - Demo-key auto-seeding is dev/demo-only and can be disabled
-
-See `PRODUCTION_HARDENING_PLAN.md` for the SaaS-ready migration path.
+- This repo is intentionally local-first and operator-focused
 
 ---
 
