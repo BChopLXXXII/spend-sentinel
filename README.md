@@ -43,6 +43,11 @@ Open:
 - Keys: `http://localhost:3000/keys`
 - Settings: `http://localhost:3000/settings`
 
+UI testing shortcut:
+- On **API Keys**, each key card now has:
+  - **Simulate Request** (quick happy-path check)
+  - **Force 402 Test** (tries to trigger budget-exceeded path)
+
 ---
 
 ## Proxy Usage

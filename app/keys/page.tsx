@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, TestTube2, Trash2 } from 'lucide-react'
 
 type ApiKeyItem = {
   id: string
@@ -14,6 +14,11 @@ type ApiKeyItem = {
   createdAt: number
 }
 
+type KeyTestResult = {
+  status: number
+  message: string
+}
+
 export default function KeysPage() {
   const [keys, setKeys] = useState<ApiKeyItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -21,6 +26,8 @@ export default function KeysPage() {
   const [showAdd, setShowAdd] = useState(false)
   const [saving, setSaving] = useState(false)
   const [newKey, setNewKey] = useState({ name: '', key: '', budget: 50 })
+  const [testingKeyId, setTestingKeyId] = useState<string | null>(null)
+  const [testResults, setTestResults] = useState<Record<string, KeyTestResult>>({})
 
   async function loadKeys() {
     try {
@@ -112,6 +119,53 @@ export default function KeysPage() {
     }
   }
 
+  async function runKeyTest(id: string, mode: 'normal' | 'force402') {
+    setTestingKeyId(id)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/keys/test', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          message: mode === 'force402' ? 'Force budget exceed from UI test' : 'UI smoke test request',
+          maxTokens: mode === 'force402' ? 100_000 : 256,
+        }),
+      })
+
+      const payload = (await res.json().catch(() => ({}))) as {
+        error?: string
+        spend?: number
+        demoMode?: boolean
+      }
+
+      const message = res.ok
+        ? `Request accepted${typeof payload.spend === 'number' ? ` · spend $${payload.spend.toFixed(4)}` : ''}${payload.demoMode ? ' · demo mode' : ''}`
+        : payload.error ?? 'Request failed'
+
+      setTestResults((prev) => ({
+        ...prev,
+        [id]: {
+          status: res.status,
+          message,
+        },
+      }))
+
+      await loadKeys()
+    } catch (err) {
+      setTestResults((prev) => ({
+        ...prev,
+        [id]: {
+          status: 0,
+          message: err instanceof Error ? err.message : 'UI test request failed',
+        },
+      }))
+    } finally {
+      setTestingKeyId(null)
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
@@ -185,6 +239,7 @@ export default function KeysPage() {
       <div className="space-y-4">
         {keys.map((key) => {
           const percentUsed = key.budget > 0 ? Math.min((key.spent / key.budget) * 100, 100) : 0
+          const testResult = testResults[key.id]
 
           return (
             <div key={key.id} className="bg-card rounded-lg border p-6">
@@ -242,6 +297,44 @@ export default function KeysPage() {
                   className={`h-full rounded-full ${percentUsed > 95 ? 'bg-destructive' : percentUsed > 80 ? 'bg-yellow-500' : 'bg-primary'}`}
                   style={{ width: `${percentUsed}%` }}
                 />
+              </div>
+
+              <div className="mt-4 border-t pt-4 space-y-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <TestTube2 className="w-4 h-4" />
+                  UI smoke test (no curl needed)
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => runKeyTest(key.id, 'normal')}
+                    disabled={testingKeyId === key.id}
+                    className="px-3 py-1.5 text-sm border rounded-lg hover:bg-muted disabled:opacity-60"
+                  >
+                    {testingKeyId === key.id ? 'Running…' : 'Simulate Request'}
+                  </button>
+                  <button
+                    onClick={() => runKeyTest(key.id, 'force402')}
+                    disabled={testingKeyId === key.id}
+                    className="px-3 py-1.5 text-sm border rounded-lg hover:bg-muted disabled:opacity-60"
+                  >
+                    {testingKeyId === key.id ? 'Running…' : 'Force 402 Test'}
+                  </button>
+                </div>
+
+                {testResult ? (
+                  <p
+                    className={`text-xs ${
+                      testResult.status >= 200 && testResult.status < 300
+                        ? 'text-green-600'
+                        : testResult.status === 402
+                          ? 'text-yellow-600'
+                          : 'text-destructive'
+                    }`}
+                  >
+                    Status {testResult.status}: {testResult.message}
+                  </p>
+                ) : null}
               </div>
             </div>
           )
