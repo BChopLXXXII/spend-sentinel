@@ -250,3 +250,10 @@ export async function GET() {
     settings: spendStore.settings,
   })
 }
+
+export async function DELETE() {
+  spendStore.usageLogs = []
+  persistStore()
+
+  return NextResponse.json({ ok: true, message: 'Recent activity cleared.' })
+}
