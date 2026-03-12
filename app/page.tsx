@@ -95,6 +95,7 @@ function formatTimeAgo(timestamp: number) {
 export default function Dashboard() {
   const [data, setData] = useState<ProxyStatsResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [clearing, setClearing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -131,6 +132,34 @@ export default function Dashboard() {
 
   const activeKeys = useMemo(() => data?.keys.filter((k) => k.enabled).length ?? 0, [data])
 
+  async function clearRecentActivity() {
+    if (clearing) return
+
+    const confirmed = window.confirm('Clear all recent activity logs? This cannot be undone.')
+    if (!confirmed) return
+
+    try {
+      setClearing(true)
+      const res = await fetch('/api/proxy', { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to clear recent activity')
+
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              totals: { today: 0, week: 0, allTime: 0 },
+              recent: [],
+            }
+          : prev,
+      )
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to clear recent activity')
+    } finally {
+      setClearing(false)
+    }
+  }
+
   if (loading && !data) {
     return <p className="text-muted-foreground">Loading spend dashboard…</p>
   }
@@ -143,7 +172,7 @@ export default function Dashboard() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Live token spend and budget enforcement overview</p>
+        <p className="text-muted-foreground mt-1">Live token spend, budget enforcement, and a dead-simple first-run flow.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -180,7 +209,17 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-card rounded-lg border p-6">
-          <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">Recent Activity</h2>
+            <button
+              type="button"
+              onClick={clearRecentActivity}
+              disabled={clearing || (data?.recent.length ?? 0) === 0}
+              className="text-xs px-3 py-1.5 rounded-md border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {clearing ? 'Clearing…' : 'Clear activity'}
+            </button>
+          </div>
           <div className="space-y-3">
             {(data?.recent ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">No usage yet. Send a request through `/api/proxy`.</p>
@@ -205,15 +244,37 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="bg-muted/30 rounded-lg border p-6">
-        <h2 className="text-lg font-semibold mb-4">Quick Setup</h2>
+      <div className="bg-muted/30 rounded-lg border p-6 space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold">Quick Setup</h2>
+          <p className="text-sm text-muted-foreground mt-1">You can verify the whole loop in under 3 minutes.</p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="bg-card p-4 rounded-lg border">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Step 1</p>
+            <p className="font-medium mt-1">Open API Keys</p>
+            <p className="text-sm text-muted-foreground mt-1">Add a real key, or use the demo key seeded in local dev.</p>
+          </div>
+          <div className="bg-card p-4 rounded-lg border">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Step 2</p>
+            <p className="font-medium mt-1">Run the built-in tests</p>
+            <p className="text-sm text-muted-foreground mt-1">Use <span className="font-medium text-foreground">Simulate Request</span> for 200 and <span className="font-medium text-foreground">Force 402 Test</span> for the cutoff path.</p>
+          </div>
+          <div className="bg-card p-4 rounded-lg border">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Step 3</p>
+            <p className="font-medium mt-1">Point your client at the proxy</p>
+            <p className="text-sm text-muted-foreground mt-1">Once `/keys` looks good, route your AI tool through SpendSentinel.</p>
+          </div>
+        </div>
+
         <div className="bg-card p-4 rounded-lg border">
-          <p className="text-sm mb-2">Point your AI tool through SpendSentinel:</p>
+          <p className="text-sm mb-2">Proxy base URL:</p>
           <code className="block bg-muted p-3 rounded text-sm overflow-x-auto">
             ANTHROPIC_BASE_URL=http://localhost:3000/api/proxy
           </code>
           <p className="text-xs text-muted-foreground mt-2">
-            Add your key in the API Keys page first. Unknown keys are rejected by default.
+            Unknown keys are rejected by default, so add the key in <span className="font-medium text-foreground">API Keys</span> before sending live traffic.
           </p>
         </div>
       </div>

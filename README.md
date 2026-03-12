@@ -6,6 +6,18 @@ Stop surprise API bills with per-key budgets, live usage tracking, warning alert
 
 ---
 
+## Demo
+
+![SpendSentinel demo](./screenshots/demo.gif)
+
+What the demo shows:
+- open `/keys`
+- run **Simulate Request** to confirm the happy path
+- run **Force 402 Test** to confirm budget cutoff works
+- jump back to the dashboard to see tracked spend
+
+---
+
 ## Why SpendSentinel
 
 - Track token spend per API key
@@ -14,23 +26,11 @@ Stop surprise API bills with per-key budgets, live usage tracking, warning alert
 - View live dashboard totals (today/week/all-time)
 - Manage keys (add, disable, delete, update budget)
 - Send threshold alerts to Discord/Slack webhooks
+- Verify local setup from the UI without touching curl
 
 ---
 
-## Screenshots
-
-### Dashboard
-![SpendSentinel dashboard](./screenshots/dashboard.png)
-
-### Keys
-![SpendSentinel keys page](./screenshots/keys.png)
-
-### Settings
-![SpendSentinel settings page](./screenshots/settings.png)
-
----
-
-## Quick Start
+## 3-Minute First Run
 
 ```bash
 npm install
@@ -43,16 +43,18 @@ Open:
 - Keys: `http://localhost:3000/keys`
 - Settings: `http://localhost:3000/settings`
 
-UI testing shortcut:
-- On **API Keys**, each key card now has:
-  - **Simulate Request** (quick happy-path check)
-  - **Force 402 Test** (tries to trigger budget-exceeded path)
+Then do this:
+1. Open **API Keys**
+2. Use the seeded demo key in local dev, or add your own
+3. Click **Simulate Request** → should return `Status 200`
+4. Lower the key budget, then click **Force 402 Test** → should return `Status 402`
+5. Open **Dashboard** to confirm spend tracking is updating
+
+That gives you a full happy-path + cutoff-path smoke test without leaving the UI.
 
 ---
 
-## Proxy Usage
-
-Point your AI tool at SpendSentinel:
+## Point Your Client At The Proxy
 
 ```bash
 export ANTHROPIC_BASE_URL=http://localhost:3000/api/proxy
@@ -60,7 +62,7 @@ export ANTHROPIC_BASE_URL=http://localhost:3000/api/proxy
 
 Then send requests through `/api/proxy` using a key already added in `/keys`.
 
-> API keys must be sent via `x-api-key` header only (not request body).
+> API keys must be sent via `x-api-key` header only, not in the request body.
 
 ### Example request
 
@@ -77,6 +79,19 @@ curl -X POST http://localhost:3000/api/proxy \
 
 ---
 
+## Screenshots
+
+### Dashboard
+![SpendSentinel dashboard](./screenshots/dashboard.png)
+
+### Keys
+![SpendSentinel keys page](./screenshots/keys.png)
+
+### Settings
+![SpendSentinel settings page](./screenshots/settings.png)
+
+---
+
 ## API Endpoints
 
 ### Keys
@@ -84,10 +99,12 @@ curl -X POST http://localhost:3000/api/proxy \
 - `POST /api/keys` → add key `{ name, key, budget }`
 - `PATCH /api/keys` → update `{ id, enabled?, budget? }`
 - `DELETE /api/keys?id=<id>` → delete key
+- `POST /api/keys/test` → trigger a local UI/dev smoke request for a saved key
 
 ### Proxy
 - `POST /api/proxy` → enforce budget + forward (or demo response)
 - `GET /api/proxy` → dashboard totals + recent usage
+- `DELETE /api/proxy` → clear recent activity logs
 
 ### Settings
 - `GET /api/settings` → fetch alert + cutoff settings

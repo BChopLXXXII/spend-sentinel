@@ -171,7 +171,7 @@ export default function KeysPage() {
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">API Keys</h1>
-          <p className="text-muted-foreground mt-1">Manage tracked keys, budgets, and enforcement state</p>
+          <p className="text-muted-foreground mt-1">Manage tracked keys, budgets, and verify cutoff behavior without touching curl.</p>
         </div>
         <button
           onClick={() => setShowAdd((v) => !v)}
@@ -183,6 +183,20 @@ export default function KeysPage() {
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+      <div className="rounded-lg border bg-muted/30 p-4">
+        <div className="flex items-start gap-3">
+          <TestTube2 className="w-5 h-5 mt-0.5 text-primary" />
+          <div className="space-y-2 text-sm">
+            <p className="font-medium">Fast first-run check</p>
+            <ol className="list-decimal pl-5 space-y-1 text-muted-foreground">
+              <li>Add a key, or use the demo key already seeded in local dev.</li>
+              <li>Click <span className="font-medium text-foreground">Simulate Request</span> to confirm the happy path returns 200.</li>
+              <li>Drop the budget low, then click <span className="font-medium text-foreground">Force 402 Test</span> to confirm the cutoff path works.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
 
       {showAdd ? (
         <div className="bg-card rounded-lg border p-6">
@@ -344,7 +358,7 @@ export default function KeysPage() {
       {!loading && keys.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground border rounded-lg bg-card">
           <p>No API keys added yet.</p>
-          <p className="text-sm mt-1">Add your first key to enforce spend limits.</p>
+          <p className="text-sm mt-1">Add your first key to enforce spend limits, then use the built-in test buttons to verify the flow.</p>
         </div>
       ) : null}
     </div>
